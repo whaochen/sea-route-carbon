@@ -59,7 +59,7 @@ export async function exportVerificationPng(
       useCORS: true,
       allowTaint: false,
       scale: 2,
-      backgroundColor: '#0b1320',
+      backgroundColor: '#f8fafc',
       logging: false,
     });
   } catch {
@@ -69,7 +69,7 @@ export async function exportVerificationPng(
     mapCanvas.width = 1440;
     mapCanvas.height = 760;
     const fctx = mapCanvas.getContext('2d')!;
-    fctx.fillStyle = '#0e1b2d';
+    fctx.fillStyle = '#e2e8f0';
     fctx.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
     if (innerCanvas) {
       fctx.drawImage(innerCanvas, 0, 0, mapCanvas.width, mapCanvas.height);
@@ -87,55 +87,53 @@ export async function exportVerificationPng(
   const ctx = finalCanvas.getContext('2d')!;
 
   // 1. 繪製地圖
-  ctx.fillStyle = '#0b1320';
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, outWidth, outHeight);
   ctx.drawImage(mapCanvas, 0, 0, outWidth, mapTargetHeight);
 
-  // 2. 繪製下方查證資訊卡背景
+  // 2. 繪製下方淺色白底高對比 MRV 查證資訊卡
   const cardY = mapTargetHeight;
-  ctx.fillStyle = '#0c1626';
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, cardY, outWidth, cardHeight);
 
-  // 電光天藍頂部邊線
-  ctx.fillStyle = '#29b6f6';
+  // 淡天藍數值區背景
+  ctx.fillStyle = '#f0f9ff';
+  ctx.fillRect(32, cardY + 146, outWidth - 64, 134);
+  ctx.strokeStyle = '#bae6fd';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(32, cardY + 146, outWidth - 64, 134);
+
+  // 亮藍頂部邊線
+  ctx.fillStyle = '#0284c7';
   ctx.fillRect(0, cardY, outWidth, 4);
 
-  const padX = 44;
+  const padX = 48;
   let y = cardY + 46;
 
   // 標題列
-  ctx.fillStyle = '#29b6f6';
-  ctx.font = 'bold 16px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#0284c7';
+  ctx.font = 'bold 15px "JetBrains Mono", monospace';
   ctx.fillText('HAO ELEMENT MATRIX · Zn 30 · MRV VERIFICATION RECORD', padX, y);
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '500 16px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#475569';
+  ctx.font = '500 15px "JetBrains Mono", monospace';
   const tsText = `查詢時間：${res.timestampUtc8}`;
   const tsWidth = ctx.measureText(tsText).width;
   ctx.fillText(tsText, outWidth - padX - tsWidth, y);
 
   y += 38;
-  ctx.fillStyle = '#f8fafc';
+  ctx.fillStyle = '#0f172a';
   ctx.font = 'bold 26px "Noto Sans TC", "Inter", sans-serif';
   const routeHeadline = res.portsSequence.map((p) => formatPortDisplay(p)).join('  →  ');
   ctx.fillText(truncateText(ctx, routeHeadline, outWidth - padX * 2), padX, y);
 
   y += 34;
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = '500 18px "Noto Sans TC", "Inter", sans-serif';
+  ctx.fillStyle = '#334155';
+  ctx.font = '500 17px "Noto Sans TC", "Inter", sans-serif';
   ctx.fillText(`航道條件：${res.restrictionLabel}`, padX, y);
 
-  // 數值區塊分隔線
-  y += 24;
-  ctx.strokeStyle = 'rgba(41, 182, 246, 0.25)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padX, y);
-  ctx.lineTo(outWidth - padX, y);
-  ctx.stroke();
-
   // 核心數據 4 欄
-  y += 42;
+  y = cardY + 184;
   const colW = (outWidth - padX * 2) / 4;
 
   drawMetricColumn(
@@ -145,7 +143,7 @@ export async function exportVerificationPng(
     '港到港最短距離 (SFD)',
     `${res.distanceKm.toLocaleString()} km`,
     `${res.distanceNm.toLocaleString()} 海里 (nm)`,
-    '#29b6f6'
+    '#0284c7'
   );
 
   const diffMain =
@@ -156,22 +154,22 @@ export async function exportVerificationPng(
     res.diffPercent !== undefined
       ? `對比標準路徑 ${res.diffPercent >= 0 ? '+' : ''}${res.diffPercent}%`
       : `大圓距離 ${res.greatCircleKm.toLocaleString()} km`;
-  drawMetricColumn(ctx, padX + colW, y, '路徑特徵 / 改道差異', diffMain, diffSub, '#f8fafc');
+  drawMetricColumn(ctx, padX + colW, y, '路徑特徵 / 改道差異', diffMain, diffSub, '#0f172a');
 
   const tkmMain = res.tonKilometers !== undefined ? `${res.tonKilometers.toLocaleString()} t-km` : '未輸入重量';
   const tkmSub = res.weightTonnes !== undefined ? `貨物淨重 ${res.weightTonnes.toLocaleString()} 公噸` : '僅距離佐證';
-  drawMetricColumn(ctx, padX + colW * 2, y, '延噸公里 (t-km)', tkmMain, tkmSub, '#f8fafc');
+  drawMetricColumn(ctx, padX + colW * 2, y, '延噸公里 (t-km)', tkmMain, tkmSub, '#0f172a');
 
   const co2Main = res.co2eKg !== undefined ? `${res.co2eKg.toLocaleString()} kgCO₂e` : '未計算碳排';
   const co2Sub =
     res.co2eTonnes !== undefined && res.emissionFactor !== undefined
       ? `${res.co2eTonnes} tCO₂e (係數 ${res.emissionFactor})`
       : '需輸入淨重與係數';
-  drawMetricColumn(ctx, padX + colW * 3, y, '推估碳排放量', co2Main, co2Sub, '#38bdf8');
+  drawMetricColumn(ctx, padX + colW * 3, y, '推估碳排放量', co2Main, co2Sub, '#0284c7');
 
   // 底部方法學聲明
   const footerY = cardY + cardHeight - 28;
-  ctx.fillStyle = '#94a3b8';
+  ctx.fillStyle = '#475569';
   ctx.font = '400 14px "Inter", "Noto Sans TC", sans-serif';
   ctx.fillText(`方法學與資料來源：${METHODOLOGY_STATEMENT}`, padX, footerY);
 
@@ -194,15 +192,15 @@ function drawMetricColumn(
   sub: string,
   valueColor: string
 ): void {
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '500 15px "Noto Sans TC", sans-serif';
+  ctx.fillStyle = '#475569';
+  ctx.font = '600 15px "Noto Sans TC", sans-serif';
   ctx.fillText(label, x, y);
 
   ctx.fillStyle = valueColor;
   ctx.font = 'bold 28px "JetBrains Mono", "Noto Sans TC", sans-serif';
   ctx.fillText(value, x, y + 36);
 
-  ctx.fillStyle = '#cbd5e1';
+  ctx.fillStyle = '#64748b';
   ctx.font = '400 14px "Noto Sans TC", "JetBrains Mono", sans-serif';
   ctx.fillText(sub, x, y + 62);
 }

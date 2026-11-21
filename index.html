@@ -12,22 +12,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- Leaflet CSS (loaded from node_modules via Vite in main.ts as well, plus fallback) -->
   <!-- 晧脈元素庫中央 3D 回航徽章 -->
   <script src="https://hao-element-matrix.pages.dev/badge.js" defer></script>
 </head>
 <body>
   <div id="app" class="app-shell">
-    <!-- 頂部導覽列 Banner -->
+    <!-- 1. 頂部深色頁首（Header） -->
     <header class="top-nav">
       <div class="nav-brand">
         <div class="brand-emblem" aria-hidden="true">
           <span class="emblem-num">30</span>
           <span class="emblem-sym">Zn</span>
+          <span class="emblem-name">Zinc</span>
         </div>
         <div class="brand-text">
           <h1 class="brand-title">全球海運航線與碳排計算箱</h1>
-          <p class="brand-subtitle">晧脈元素庫・Eurostat Marnet 20km &amp; ISO 14083</p>
+          <p class="brand-subtitle">晧脈元素庫 · Sea Route Carbon Box | Eurostat Marnet 20km · ISO 14083 SFD 精算</p>
         </div>
       </div>
 
@@ -50,15 +50,30 @@
       </div>
 
       <div class="nav-actions">
-        <button type="button" id="btn-open-batch" class="btn btn-nav-action" title="批次查詢多組港口並匯出 CSV">
-          <span>📋 批次查詢 / CSV</span>
-        </button>
-
         <div class="nav-badge-slot">
           <hao-element-badge symbol="Zn" theme="dark"></hao-element-badge>
         </div>
       </div>
     </header>
+
+    <!-- 2. 純白橫向頁籤列（Tab Bar） -->
+    <nav class="tab-bar" aria-label="功能頁籤">
+      <div class="tab-bar-inner">
+        <button type="button" class="tab-btn active" data-tab="single">
+          <span>單趟精算</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="multi">
+          <span>多段轉運航程</span>
+          <span id="tab-waypoint-badge" class="tab-badge">0</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="batch">
+          <span>CSV 批次試算</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="reference">
+          <span>係數與引用總表</span>
+        </button>
+      </div>
+    </nav>
 
     <!-- 路網非同步載入進度條 -->
     <div id="network-loader-bar" class="loader-banner">
@@ -73,17 +88,17 @@
       </div>
     </div>
 
-    <!-- 主工作區 -->
-    <main class="workspace">
+    <!-- 頁籤 1 & 2 共用：單趟精算 / 多段轉運航程 主工作區 -->
+    <main id="view-calculator" class="workspace">
       <!-- 左側控制面板 -->
       <aside class="control-panel">
-        <!-- 快速基準案例 -->
+        <!-- 快速基準案例（圓角膠囊 Pill） -->
         <section class="panel-card">
           <div class="card-header">
             <h2>快速載入基準航線</h2>
           </div>
           <div class="preset-chips">
-            <button type="button" class="chip-btn" data-preset="CNSHA-NLRTM">
+            <button type="button" class="chip-btn active" data-preset="CNSHA-NLRTM">
               上海 CNSHA → 鹿特丹 NLRTM
             </button>
             <button type="button" class="chip-btn" data-preset="CNSHA-NLRTM-CAPE">
@@ -110,13 +125,14 @@
               <div id="origin-search-mount"></div>
             </div>
 
-            <!-- 中繼轉運港動態容器 -->
-            <div id="waypoints-container" class="waypoints-list"></div>
-
-            <div class="waypoint-actions">
-              <button type="button" id="btn-add-waypoint" class="btn btn-outline btn-xs">
-                ＋ 新增中繼轉運港（最多 3 個）
-              </button>
+            <!-- 中繼轉運港動態容器（切換「多段轉運航程」頁籤時展開） -->
+            <div id="multi-leg-section" class="multi-leg-section hidden">
+              <div id="waypoints-container" class="waypoints-list"></div>
+              <div class="waypoint-actions">
+                <button type="button" id="btn-add-waypoint" class="btn btn-outline btn-xs">
+                  ＋ 新增中繼轉運港（最多 3 個）
+                </button>
+              </div>
             </div>
 
             <div class="port-field-group">
@@ -142,7 +158,7 @@
               <input type="checkbox" id="restrict-suez" />
               <div class="toggle-content">
                 <span class="toggle-title">避開蘇伊士運河 &amp; 曼德海峽</span>
-                <span class="toggle-desc">紅海危機情境：強制繞行南非好望角（<code>suez</code> + <code>babelmandeb</code>）</span>
+                <span class="toggle-desc">紅海危機情境：封鎖紅海航道（<code>suez</code> + <code>babelmandeb</code>）</span>
               </div>
             </label>
             <label class="toggle-item">
@@ -174,7 +190,7 @@
             </div>
             <div class="input-group">
               <label for="input-ef" class="field-label">排放係數（kgCO₂e / t-km）</label>
-              <input type="number" id="input-ef" min="0" step="0.0001" placeholder="例如：0.016" />
+              <input type="number" id="input-ef" min="0" step="0.0001" placeholder="例如：0.0161" />
             </div>
           </div>
           <div class="ef-presets">
@@ -196,7 +212,7 @@
 
       <!-- 右側地圖與查證結果區 -->
       <section class="results-pane">
-        <!-- 地圖容器 -->
+        <!-- 地圖容器卡片 -->
         <div class="map-card">
           <div id="map-capture-area" class="map-capture-wrapper">
             <div id="sea-map" class="sea-map"></div>
@@ -219,78 +235,88 @@
           </div>
         </div>
 
-        <!-- 計算結果數據卡 -->
+        <!-- 淡天藍結果摘要卡 -->
         <div id="results-dashboard" class="results-dashboard hidden">
-          <div class="metrics-grid">
-            <div class="metric-card primary">
-              <span class="metric-label">港到港最短可行距離 (SFD)</span>
-              <div class="metric-value-row">
-                <span id="res-km" class="metric-value">--</span>
-                <span class="metric-unit">km</span>
+          <div class="summary-sky-card">
+            <div class="metrics-grid">
+              <div class="metric-item">
+                <span class="metric-label">港到港最短可行距離 (SFD)</span>
+                <div class="metric-value-row">
+                  <span id="res-km" class="metric-value highlight">--</span>
+                  <span class="metric-unit">km</span>
+                </div>
+                <span id="res-nm" class="metric-sub">-- 海里 (nm)</span>
               </div>
-              <span id="res-nm" class="metric-sub">-- 海里 (nm)</span>
+
+              <div class="metric-item">
+                <span class="metric-label">改道距離差異（對比標準路徑）</span>
+                <div class="metric-value-row">
+                  <span id="res-diff" class="metric-value">--</span>
+                </div>
+                <span id="res-detour" class="metric-sub">繞航比 (Detour Ratio): --</span>
+              </div>
+
+              <div class="metric-item">
+                <span class="metric-label">延噸公里 (Ton-Kilometer)</span>
+                <div class="metric-value-row">
+                  <span id="res-tkm" class="metric-value">--</span>
+                  <span class="metric-unit">t-km</span>
+                </div>
+                <span id="res-weight-note" class="metric-sub">請輸入貨物淨重以試算</span>
+              </div>
+
+              <div class="metric-item">
+                <span class="metric-label">推估碳排放量 (CO₂e)</span>
+                <div class="metric-value-row">
+                  <span id="res-co2-kg" class="metric-value highlight">--</span>
+                  <span class="metric-unit">kgCO₂e</span>
+                </div>
+                <span id="res-co2-t" class="metric-sub">-- tCO₂e</span>
+              </div>
             </div>
 
-            <div class="metric-card">
-              <span class="metric-label">改道距離差異（對比標準路徑）</span>
-              <div class="metric-value-row">
-                <span id="res-diff" class="metric-value">--</span>
+            <div class="route-summary-bar">
+              <div class="summary-item">
+                <span class="summary-key">航線序列</span>
+                <span id="res-route-path" class="summary-val mono">--</span>
               </div>
-              <span id="res-detour" class="metric-sub">繞航比 (Detour Ratio): --</span>
-            </div>
-
-            <div class="metric-card">
-              <span class="metric-label">延噸公里 (Ton-Kilometer)</span>
-              <div class="metric-value-row">
-                <span id="res-tkm" class="metric-value">--</span>
-                <span class="metric-unit">t-km</span>
+              <div class="summary-item">
+                <span class="summary-key">航道限制</span>
+                <span id="res-restrictions" class="summary-val">標準最短可行路徑</span>
               </div>
-              <span id="res-weight-note" class="metric-sub">請輸入貨物淨重以試算</span>
-            </div>
-
-            <div class="metric-card accent">
-              <span class="metric-label">推估碳排放量 (CO₂e)</span>
-              <div class="metric-value-row">
-                <span id="res-co2-kg" class="metric-value">--</span>
-                <span class="metric-unit">kgCO₂e</span>
+              <div class="summary-item">
+                <span class="summary-key">途經主要水道</span>
+                <span id="res-passages" class="summary-val">--</span>
               </div>
-              <span id="res-co2-t" class="metric-sub">-- tCO₂e</span>
+              <div class="summary-item">
+                <span class="summary-key">路網吸附距離</span>
+                <span id="res-snap" class="summary-val mono">--</span>
+              </div>
             </div>
           </div>
 
-          <!-- 航線明細與水道 -->
-          <div class="route-summary-bar">
-            <div class="summary-item">
-              <span class="summary-key">航線序列</span>
-              <span id="res-route-path" class="summary-val mono">--</span>
+          <!-- 引用說明（MRV 查證佐證抽屜）白底卡片 -->
+          <div class="mrv-drawer-card">
+            <div class="mrv-drawer-header">
+              <div>
+                <h3 class="mrv-drawer-title">引用說明（MRV 查證佐證抽屜）</h3>
+                <p class="mrv-drawer-sub">適用於 ISO 14064-1 類別三清冊與第三方查證報告書佐證</p>
+              </div>
+              <div class="mrv-drawer-actions">
+                <button type="button" id="btn-copy-audit" class="btn btn-primary btn-sm">
+                  📋 複製報告書引用文字
+                </button>
+                <button type="button" id="btn-export-png" class="btn btn-primary btn-sm">
+                  🖼️ 匯出查證佐證圖（PNG）
+                </button>
+              </div>
             </div>
-            <div class="summary-item">
-              <span class="summary-key">航道限制</span>
-              <span id="res-restrictions" class="summary-val">標準最短可行路徑</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-key">途經主要水道</span>
-              <span id="res-passages" class="summary-val">--</span>
-            </div>
-            <div class="summary-item">
-              <span class="summary-key">路網吸附距離</span>
-              <span id="res-snap" class="summary-val mono">--</span>
-            </div>
-          </div>
-
-          <!-- MRV 查證匯出工具列 -->
-          <div class="export-toolbar">
-            <button type="button" id="btn-export-png" class="btn btn-primary">
-              🖼️ 下載查證佐證圖（PNG）
-            </button>
-            <button type="button" id="btn-copy-audit" class="btn btn-outline">
-              📋 複製盤查清冊標準備註
-            </button>
-            <span id="copy-feedback" class="copy-feedback hidden">已複製至剪貼簿！</span>
+            <span id="copy-feedback" class="copy-feedback hidden">✓ 已複製盤查清冊引用文字至剪貼簿</span>
+            <pre id="audit-preview-box" class="audit-preview-box">尚未計算航線。</pre>
           </div>
         </div>
 
-        <!-- GLEC / ISO 14083 查證防呆說明卡（固定呈現） -->
+        <!-- GLEC / ISO 14083 查證防呆說明卡 -->
         <div class="audit-guard-card">
           <div class="guard-header">
             <span class="guard-badge">ISO 14064-1 類別三 / ISO 14083 / GLEC v3.2 查證防呆</span>
@@ -310,28 +336,15 @@
       </section>
     </main>
 
-    <!-- 頁尾品牌列 -->
-    <footer class="app-footer">
-      <div class="footer-left">
-        <span class="footer-brand">晧脈元素庫 <strong>Zn</strong> 30 鋅 · 全球海運航線與碳排計算箱</span>
-        <span class="footer-meta">Shortest Feasible Distance (SFD) via 2025 Eurostat Maritime Network (searoute-ts / marnet-20km) · Map © OpenStreetMap contributors</span>
-      </div>
-      <div class="footer-right">
-        <hao-element-badge symbol="Zn" theme="dark"></hao-element-badge>
-      </div>
-    </footer>
-  </div>
-
-  <!-- 批次查詢與 CSV 匯出 Modal -->
-  <div id="batch-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="batch-modal-title">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h3 id="batch-modal-title">批次港口航線查詢與 CSV 匯出</h3>
-        <button type="button" id="btn-close-batch" class="btn-close" aria-label="關閉">✕</button>
-      </div>
-      <div class="modal-body">
+    <!-- 頁籤 3：CSV 批次試算面板 -->
+    <section id="view-batch" class="tab-panel hidden">
+      <div class="panel-card">
+        <div class="card-header">
+          <h2>CSV 批次航線查詢與查證報表匯出</h2>
+          <span class="badge-tag">BATCH MRV</span>
+        </div>
         <p class="helper-text">
-          每行輸入一筆資料，格式：<code>起運港代碼, 目的港代碼, 貨物淨重(公噸，選填)</code>（支援逗號或 Tab 分隔，可從 Excel 直接貼上）。將套用目前左側勾選的「運河改道」與「排放係數」設定。
+          每行輸入一筆資料，格式：<code>起運港代碼, 目的港代碼, 貨物淨重(公噸，選填)</code>（支援逗號或 Tab 分隔，可從 Excel 直接貼上）。將套用目前「單趟精算」頁籤勾選的「運河改道」與「排放係數」設定。
         </p>
         <textarea id="batch-input" rows="7" placeholder="CNSHA, NLRTM, 25&#10;TWKHH, USLAX, 18.5&#10;TWKEL, JPTYO, 10"></textarea>
         <div class="batch-actions">
@@ -356,7 +369,77 @@
           </table>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- 頁籤 4：係數與引用總表 -->
+    <section id="view-reference" class="tab-panel hidden">
+      <div class="ref-grid">
+        <div class="panel-card">
+          <div class="card-header">
+            <h2>常用海運排放係數參考表（GLEC v3.2 / 環境部參考）</h2>
+            <span class="badge-tag">kgCO₂e / t-km</span>
+          </div>
+          <p class="helper-text">
+            下表係數僅供初步試算參考，正式盤查請優先引用環境部最新公告或承運船公司提供之實測係數。
+          </p>
+          <table class="batch-table">
+            <thead>
+              <tr>
+                <th>船型類別</th>
+                <th>參考係數 (kgCO₂e / t-km)</th>
+                <th>備註說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>一般海運貨櫃船（預設）</td>
+                <td class="mono"><strong>0.0161</strong></td>
+                <td>含 GLEC 實務繞航修正（勿重複乘 1.15）</td>
+              </tr>
+              <tr>
+                <td>超大型遠洋貨櫃船 (&gt;10,000 TEU)</td>
+                <td class="mono"><strong>0.0078</strong></td>
+                <td>歐亞／跨太平洋幹線大型母船參考值</td>
+              </tr>
+              <tr>
+                <td>遠洋散裝船 (Bulk Carrier)</td>
+                <td class="mono"><strong>0.0065</strong></td>
+                <td>礦砂、穀物、煤炭等大宗散貨</td>
+              </tr>
+              <tr>
+                <td>油輪 / 化學品船 (Tanker)</td>
+                <td class="mono"><strong>0.0082</strong></td>
+                <td>液態大宗貨物</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel-card">
+          <div class="card-header">
+            <h2>查證邊界與方法學標準引用</h2>
+            <span class="badge-tag">ISO 14064-1 / 14083</span>
+          </div>
+          <ul class="guard-list">
+            <li><strong>演算法與路網</strong>：<code>searoute-ts</code>（MIT 授權）結合 2025 歐盟統計局海運路網（Eurostat <code>marnet-20km</code>），共收錄全球 1,610 個 UN/LOCODE 海港節點。</li>
+            <li><strong>距離定義（SFD）</strong>：依據 ISO 14083 與 GLEC Framework v3.2 規範，採用「港到港最短可行距離（Port-to-Port Shortest Feasible Distance）」，非直線大圓距離。</li>
+            <li><strong>繞航修正防呆</strong>：若採用已內含約 15% 實際航道繞航之排放係數，請直接以本工具輸出之 SFD 相乘，切勿額外乘以 1.15。</li>
+            <li><strong>跨換日線與運河改道</strong>：支援 <code>antimeridian: 'split'</code> 跨太平洋不斷線渲染，以及蘇伊士運河／曼德海峽、巴拿馬運河、麻六甲海峽受阻改道模擬。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 頁尾品牌列 -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span class="footer-brand">晧脈元素庫 <strong>Zn</strong> 30 鋅 · 全球海運航線與碳排計算箱</span>
+        <span class="footer-meta">Shortest Feasible Distance (SFD) via 2025 Eurostat Maritime Network (searoute-ts / marnet-20km) · Map © OpenStreetMap contributors</span>
+      </div>
+      <div class="footer-right">
+        <hao-element-badge symbol="Zn" theme="light"></hao-element-badge>
+      </div>
+    </footer>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

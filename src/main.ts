@@ -27,6 +27,8 @@ interface WaypointRow {
   search: PortSearchInput;
 }
 
+type AppTab = 'single' | 'multi' | 'batch' | 'reference';
+
 class SeaRouteApp {
   private mapService: SeaMapService;
   private originInput: PortSearchInput;
@@ -34,6 +36,7 @@ class SeaRouteApp {
   private waypoints: WaypointRow[] = [];
   private lastResult: RouteCalculationResult | null = null;
   private lastBatchRows: BatchRowResult[] = [];
+  private activeTab: AppTab = 'single';
 
   // DOM elements
   private statusPill = document.getElementById('network-status-pill')!;
@@ -42,6 +45,12 @@ class SeaRouteApp {
   private loaderMessage = document.getElementById('loader-message')!;
   private loaderProgressFill = document.getElementById('loader-progress-fill')!;
   private btnRetryNetwork = document.getElementById('btn-retry-network') as HTMLButtonElement;
+
+  private viewCalculator = document.getElementById('view-calculator')!;
+  private viewBatch = document.getElementById('view-batch')!;
+  private viewReference = document.getElementById('view-reference')!;
+  private multiLegSection = document.getElementById('multi-leg-section')!;
+  private tabWaypointBadge = document.getElementById('tab-waypoint-badge')!;
 
   private waypointsContainer = document.getElementById('waypoints-container')!;
   private btnAddWaypoint = document.getElementById('btn-add-waypoint') as HTMLButtonElement;
@@ -78,11 +87,9 @@ class SeaRouteApp {
   private btnExportPng = document.getElementById('btn-export-png') as HTMLButtonElement;
   private btnCopyAudit = document.getElementById('btn-copy-audit') as HTMLButtonElement;
   private copyFeedback = document.getElementById('copy-feedback')!;
+  private auditPreviewBox = document.getElementById('audit-preview-box')!;
 
-  // Batch Modal
-  private batchModal = document.getElementById('batch-modal')!;
-  private btnOpenBatch = document.getElementById('btn-open-batch') as HTMLButtonElement;
-  private btnCloseBatch = document.getElementById('btn-close-batch') as HTMLButtonElement;
+  // Batch Panel
   private batchInput = document.getElementById('batch-input') as HTMLTextAreaElement;
   private btnRunBatch = document.getElementById('btn-run-batch') as HTMLButtonElement;
   private btnExportCsv = document.getElementById('btn-export-csv') as HTMLButtonElement;
@@ -103,11 +110,13 @@ class SeaRouteApp {
     this.originInput = new PortSearchInput(document.getElementById('origin-search-mount')!, {
       placeholder: '輸入起運港代碼或中英文名稱（如 CNSHA、上海）',
       initialPort: defaultOrigin,
+      onChange: () => this.clearPresetActive(),
     });
 
     this.destInput = new PortSearchInput(document.getElementById('dest-search-mount')!, {
       placeholder: '輸入目的港代碼或中英文名稱（如 NLRTM、鹿特丹）',
       initialPort: defaultDest,
+      onChange: () => this.clearPresetActive(),
     });
 
     this.bindEvents();
@@ -144,7 +153,47 @@ class SeaRouteApp {
     }
   }
 
+  private switchTab(tab: AppTab): void {
+    this.activeTab = tab;
+
+    document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+
+    const isCalc = tab === 'single' || tab === 'multi';
+    this.viewCalculator.classList.toggle('hidden', !isCalc);
+    this.viewBatch.classList.toggle('hidden', tab !== 'batch');
+    this.viewReference.classList.toggle('hidden', tab !== 'reference');
+
+    if (tab === 'multi') {
+      this.multiLegSection.classList.remove('hidden');
+      if (this.waypoints.length === 0) {
+        this.addWaypoint();
+      }
+    } else if (tab === 'single') {
+      this.multiLegSection.classList.add('hidden');
+    }
+
+    if (isCalc) {
+      window.setTimeout(() => this.mapService.invalidateSize(), 60);
+    }
+  }
+
+  private clearPresetActive(): void {
+    document.querySelectorAll<HTMLButtonElement>('.chip-btn[data-preset]').forEach((b) => {
+      b.classList.remove('active');
+    });
+  }
+
   private bindEvents(): void {
+    // 頁籤切換
+    document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab as AppTab;
+        if (tab) this.switchTab(tab);
+      });
+    });
+
     this.btnRetryNetwork.addEventListener('click', () => {
       void this.initNetwork();
     });
@@ -154,6 +203,7 @@ class SeaRouteApp {
       const d = this.destInput.getPort();
       this.originInput.setPort(d, false);
       this.destInput.setPort(o, false);
+      this.clearPresetActive();
       if (isNetworkReady() && o && d) {
         this.executeCalculation();
       }
@@ -175,11 +225,17 @@ class SeaRouteApp {
       });
     });
 
-    // 快速基準航線預設按鈕
+    // 快速基準航線預設按鈕（膠囊高亮切換）
     document.querySelectorAll<HTMLButtonElement>('.chip-btn[data-preset]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const preset = btn.dataset.preset;
+        document.querySelectorAll<HTMLButtonElement>('.chip-btn[data-preset]').forEach((b) => {
+          b.classList.toggle('active', b === btn);
+        });
         this.clearWaypoints();
+        if (this.activeTab === 'multi') {
+          this.switchTab('single');
+        }
         if (preset === 'CNSHA-NLRTM') {
           this.originInput.setPort(getPortByCode('CNSHA') ?? null, false);
           this.destInput.setPort(getPortByCode('NLRTM') ?? null, false);
@@ -209,9 +265,10 @@ class SeaRouteApp {
       this.executeCalculation();
     });
 
-    // 切換限制時自動重算（若已有結果）
+    // 切換限制時自動重算
     [this.restrictSuez, this.restrictPanama, this.restrictMalacca].forEach((chk) => {
       chk.addEventListener('change', () => {
+        this.clearPresetActive();
         if (isNetworkReady() && this.originInput.getPort() && this.destInput.getPort()) {
           this.executeCalculation();
         }
@@ -222,7 +279,7 @@ class SeaRouteApp {
       if (!this.lastResult) return;
       const originalText = this.btnExportPng.innerHTML;
       this.btnExportPng.disabled = true;
-      this.btnExportPng.textContent = '⏳ 正在合成高解析度查證圖…';
+      this.btnExportPng.textContent = '⏳ 正在合成查證圖…';
       try {
         const mapCaptureEl = document.getElementById('map-capture-area')!;
         await exportVerificationPng(mapCaptureEl, this.lastResult);
@@ -240,19 +297,7 @@ class SeaRouteApp {
       window.setTimeout(() => this.copyFeedback.classList.add('hidden'), 2400);
     });
 
-    // 批次查詢 Modal
-    this.btnOpenBatch.addEventListener('click', () => {
-      this.batchModal.classList.remove('hidden');
-    });
-    this.btnCloseBatch.addEventListener('click', () => {
-      this.batchModal.classList.add('hidden');
-    });
-    this.batchModal.addEventListener('click', (e) => {
-      if (e.target === this.batchModal) {
-        this.batchModal.classList.add('hidden');
-      }
-    });
-
+    // 批次查詢面板
     this.btnRunBatch.addEventListener('click', () => {
       if (!isNetworkReady()) {
         alert('請等待 marnet-20km 路網載入完成後再執行批次運算。');
@@ -302,20 +347,21 @@ class SeaRouteApp {
     label.querySelector('.btn-remove-wp')!.addEventListener('click', () => {
       this.waypoints = this.waypoints.filter((w) => w.id !== id);
       rowEl.remove();
-      this.updateWaypointAddButton();
+      this.updateWaypointUI();
     });
 
-    this.updateWaypointAddButton();
+    this.updateWaypointUI();
   }
 
   private clearWaypoints(): void {
     this.waypoints = [];
     this.waypointsContainer.innerHTML = '';
-    this.updateWaypointAddButton();
+    this.updateWaypointUI();
   }
 
-  private updateWaypointAddButton(): void {
+  private updateWaypointUI(): void {
     this.btnAddWaypoint.disabled = this.waypoints.length >= 3;
+    this.tabWaypointBadge.textContent = String(this.waypoints.length);
   }
 
   private getSelectedRestrictions(): Passage[] {
@@ -342,9 +388,13 @@ class SeaRouteApp {
       return;
     }
 
-    const waypointPorts = this.waypoints
-      .map((w) => w.search.getPort())
-      .filter((p): p is PortItem => p !== null);
+    // 僅在「多段轉運航程」頁籤時才計入中繼轉運港
+    const waypointPorts =
+      this.activeTab === 'multi'
+        ? this.waypoints
+            .map((w) => w.search.getPort())
+            .filter((p): p is PortItem => p !== null)
+        : [];
 
     const weightVal = this.inputWeight.value.trim();
     const efVal = this.inputEf.value.trim();
@@ -417,6 +467,8 @@ class SeaRouteApp {
     this.resRestrictions.textContent = res.restrictionLabel;
     this.resPassages.textContent = res.passages.length > 0 ? res.passages.join('、') : '未經主要受限運河／海峽';
     this.resSnap.textContent = `起運港 ${res.originSnapKm} km / 目的港 ${res.destinationSnapKm} km`;
+
+    this.auditPreviewBox.textContent = buildAuditTrailText(res);
 
     if (res.precisionWarnings.length > 0) {
       this.precisionWarningText.textContent = res.precisionWarnings.join(' ');
