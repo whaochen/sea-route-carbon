@@ -86,7 +86,11 @@
                 <stop offset="0%" stop-color="#29b6f6" stop-opacity="0.32" />
                 <stop offset="100%" stop-color="#29b6f6" stop-opacity="0" />
               </radialGradient>
-              <path id="khhSinRtmPath" d="M 34 62 Q 102 80 156 54 Q 226 18 286 28" />
+              <linearGradient id="landGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#193b52" stop-opacity="0.92" />
+                <stop offset="100%" stop-color="#0f2738" stop-opacity="0.95" />
+              </linearGradient>
+              <path id="khhSinRtmPath" d="M 34 58 Q 98 76 156 56 Q 214 54 242 36 Q 266 20 288 26" />
             </defs>
 
             <!-- 經緯網格線 -->
@@ -99,9 +103,21 @@
               <line x1="240" y1="0" x2="240" y2="96" />
             </g>
 
+            <!-- 陸塊剪影（航線繞行半島、海峽與大陸地形概念） -->
+            <g fill="url(#landGrad)" stroke="rgba(56, 189, 248, 0.34)" stroke-width="0.9" stroke-linejoin="round">
+              <!-- 東亞與中南半島陸塊（位於 KHH-SIN 航線北側） -->
+              <path d="M 18 0 L 138 0 L 132 28 Q 124 44 110 47 Q 95 49 84 37 Q 66 31 50 42 Q 32 46 22 32 Z" />
+              <!-- 南洋島嶼（位於 SIN 海峽南側，形成海峽通道） -->
+              <path d="M 122 71 Q 144 65 168 69 Q 178 75 166 82 Q 140 84 124 78 Z" />
+              <!-- 印度／阿拉伯半島與歐陸南緣（航線沿南側繞行進入 RTM） -->
+              <path d="M 176 0 L 274 0 L 272 16 Q 258 18 248 26 Q 236 37 216 43 Q 198 44 190 29 Q 178 24 176 0 Z" />
+              <!-- 非洲之角／遠洋陸塊（航線北側／南側對比） -->
+              <path d="M 196 68 Q 214 60 232 68 Q 238 80 222 96 L 192 96 Q 188 78 196 68 Z" />
+            </g>
+
             <!-- 動態海浪層 1（遠景緩流） -->
             <g>
-              <path d="M -160 74 Q -120 66 -80 74 T 0 74 T 80 74 T 160 74 T 240 74 T 320 74 T 400 74 T 480 74 L 480 98 L -160 98 Z"
+              <path d="M -160 76 Q -120 68 -80 76 T 0 76 T 80 76 T 160 76 T 240 76 T 320 76 T 400 76 T 480 76 L 480 98 L -160 98 Z"
                     fill="url(#waveFill1)" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.9">
                 <animateTransform attributeName="transform" type="translate" from="0 0" to="160 0" dur="6.5s" repeatCount="indefinite" />
               </path>
@@ -109,19 +125,19 @@
 
             <!-- 動態海浪層 2（近景波峰） -->
             <g>
-              <path d="M -160 82 Q -130 76 -100 82 T -40 82 T 20 82 T 80 82 T 140 82 T 200 82 T 260 82 T 320 82 T 380 82 T 440 82 T 500 82 L 500 98 L -160 98 Z"
+              <path d="M -160 84 Q -130 78 -100 84 T -40 84 T 20 84 T 80 84 T 140 84 T 200 84 T 260 84 T 320 84 T 380 84 T 440 84 T 500 84 L 500 98 L -160 98 Z"
                     fill="url(#waveFill2)" stroke="rgba(125, 211, 252, 0.45)" stroke-width="1">
                 <animateTransform attributeName="transform" type="translate" from="0 0" to="-120 0" dur="4.2s" repeatCount="indefinite" />
               </path>
             </g>
 
             <!-- 雷達中心波紋（於新加坡轉運樞紐） -->
-            <circle cx="156" cy="54" r="28" fill="url(#radarGlow)" />
-            <circle cx="156" cy="54" r="10" fill="none" stroke="#29b6f6" stroke-width="0.9" opacity="0.6">
+            <circle cx="156" cy="56" r="28" fill="url(#radarGlow)" />
+            <circle cx="156" cy="56" r="10" fill="none" stroke="#29b6f6" stroke-width="0.9" opacity="0.6">
               <animate attributeName="r" values="6;28" dur="3.2s" repeatCount="indefinite" />
               <animate attributeName="opacity" values="0.7;0" dur="3.2s" repeatCount="indefinite" />
             </circle>
-            <circle cx="156" cy="54" r="10" fill="none" stroke="#38bdf8" stroke-width="0.8" opacity="0.5">
+            <circle cx="156" cy="56" r="10" fill="none" stroke="#38bdf8" stroke-width="0.8" opacity="0.5">
               <animate attributeName="r" values="6;28" dur="3.2s" begin="1.6s" repeatCount="indefinite" />
               <animate attributeName="opacity" values="0.6;0" dur="3.2s" begin="1.6s" repeatCount="indefinite" />
             </circle>
@@ -134,14 +150,14 @@
 
             <!-- 港口節點：KHH / SIN / RTM -->
             <g font-family="'JetBrains Mono', monospace" font-size="8.5" font-weight="700" fill="#e2e8f0">
-              <circle cx="34" cy="62" r="3.2" fill="#22c55e" stroke="#0b1e2d" stroke-width="1.2" />
-              <text x="34" y="76" text-anchor="middle">KHH</text>
+              <circle cx="34" cy="58" r="3.2" fill="#22c55e" stroke="#0b1e2d" stroke-width="1.2" />
+              <text x="34" y="72" text-anchor="middle">KHH</text>
 
-              <circle cx="156" cy="54" r="3.2" fill="#38bdf8" stroke="#0b1e2d" stroke-width="1.2" />
-              <text x="156" y="70" text-anchor="middle">SIN</text>
+              <circle cx="156" cy="56" r="3.2" fill="#38bdf8" stroke="#0b1e2d" stroke-width="1.2" />
+              <text x="156" y="71" text-anchor="middle">SIN</text>
 
-              <circle cx="286" cy="28" r="3.2" fill="#f87171" stroke="#0b1e2d" stroke-width="1.2" />
-              <text x="286" y="19" text-anchor="middle">RTM</text>
+              <circle cx="288" cy="26" r="3.2" fill="#f87171" stroke="#0b1e2d" stroke-width="1.2" />
+              <text x="288" y="17" text-anchor="middle">RTM</text>
             </g>
 
             <!-- 遠洋貨櫃輪（沿弧線自動轉向航行 + 船尾浪跡） -->
