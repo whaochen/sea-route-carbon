@@ -7,6 +7,11 @@ import {
 } from 'searoute-ts';
 import { PORTS, PORT_COUNT } from 'searoute-ts/ports';
 import { PASSAGE_LABELS, ZH_PORT_NAMES } from '../data/zh-ports';
+import {
+  formatFactorCitation,
+  type EmissionFactorSpec,
+  type EmissionUnit,
+} from '../data/emissionFactors';
 
 export interface PortItem {
   code: string;
@@ -24,8 +29,10 @@ export interface RouteCalculationInput {
   waypoints: PortItem[];
   destination: PortItem;
   restrictions: Passage[];
-  weightTonnes?: number;
-  emissionFactorKgPerTkm?: number;
+  activityAmount?: number;
+  emissionUnit?: EmissionUnit;
+  emissionFactorKgPerUnit?: number;
+  emissionFactorSpec?: EmissionFactorSpec;
 }
 
 export interface RouteCalculationResult {
@@ -42,9 +49,13 @@ export interface RouteCalculationResult {
   destinationSnapKm: number;
   passages: string[];
   restrictionLabel: string;
-  weightTonnes?: number;
+  routeStatusCode: string;
+  activityAmount?: number;
+  emissionUnit: EmissionUnit;
   emissionFactor?: number;
-  tonKilometers?: number;
+  emissionFactorSpec?: EmissionFactorSpec;
+  factorCitation: string;
+  activityMetricValue?: number;
   co2eKg?: number;
   co2eTonnes?: number;
   precisionWarnings: string[];
@@ -190,6 +201,21 @@ export function formatUtc8Timestamp(date = new Date()): string {
   return `${taipei.getFullYear()}-${pad(taipei.getMonth() + 1)}-${pad(taipei.getDate())} ${pad(taipei.getHours())}:${pad(taipei.getMinutes())}:${pad(taipei.getSeconds())} (UTC+8)`;
 }
 
+export function getRouteStatusCode(restrictions: Passage[]): string {
+  if (restrictions.length === 0) return 'SFD_DIRECT';
+  const codes: string[] = [];
+  if (restrictions.includes('suez') || restrictions.includes('babelmandeb')) {
+    codes.push('REROUTED_CAPE');
+  }
+  if (restrictions.includes('panama')) {
+    codes.push('REROUTED_PANAMA');
+  }
+  if (restrictions.includes('malacca')) {
+    codes.push('REROUTED_MALACCA');
+  }
+  return codes.join('+') || 'REROUTED_CUSTOM';
+}
+
 export function describeRestrictions(restrictions: Passage[]): string {
   if (restrictions.length === 0) return '標準最短可行路徑（無水道限制）';
   const labels: string[] = [];
@@ -284,24 +310,26 @@ export function calculateSeaRoute(input: RouteCalculationInput): RouteCalculatio
     );
   }
 
-  // 噸公里與碳排計算
-  const weight =
-    typeof input.weightTonnes === 'number' && !Number.isNaN(input.weightTonnes) && input.weightTonnes > 0
-      ? input.weightTonnes
+  // 活動數據與碳排計算（支援 tkm / TEU-km）
+  const emissionUnit: EmissionUnit = input.emissionUnit ?? input.emissionFactorSpec?.unit ?? 'tkm';
+  const amount =
+    typeof input.activityAmount === 'number' && !Number.isNaN(input.activityAmount) && input.activityAmount > 0
+      ? input.activityAmount
       : undefined;
   const ef =
-    typeof input.emissionFactorKgPerTkm === 'number' &&
-    !Number.isNaN(input.emissionFactorKgPerTkm) &&
-    input.emissionFactorKgPerTkm > 0
-      ? input.emissionFactorKgPerTkm
-      : undefined;
+    typeof input.emissionFactorKgPerUnit === 'number' &&
+    !Number.isNaN(input.emissionFactorKgPerUnit) &&
+    input.emissionFactorKgPerUnit > 0
+      ? input.emissionFactorKgPerUnit
+      : input.emissionFactorSpec?.factor;
 
-  const tonKilometers = weight !== undefined ? Number((distanceKm * weight).toFixed(2)) : undefined;
+  const activityMetricValue = amount !== undefined ? Number((distanceKm * amount).toFixed(2)) : undefined;
   const co2eKg =
-    tonKilometers !== undefined && ef !== undefined
-      ? Number((tonKilometers * ef).toFixed(2))
+    activityMetricValue !== undefined && ef !== undefined
+      ? Number((activityMetricValue * ef).toFixed(2))
       : undefined;
   const co2eTonnes = co2eKg !== undefined ? Number((co2eKg / 1000).toFixed(4)) : undefined;
+  const factorCitation = formatFactorCitation(input.emissionFactorSpec, ef);
 
   return {
     route,
@@ -317,9 +345,13 @@ export function calculateSeaRoute(input: RouteCalculationInput): RouteCalculatio
     destinationSnapKm,
     passages,
     restrictionLabel: describeRestrictions(input.restrictions),
-    weightTonnes: weight,
+    routeStatusCode: getRouteStatusCode(input.restrictions),
+    activityAmount: amount,
+    emissionUnit,
     emissionFactor: ef,
-    tonKilometers,
+    emissionFactorSpec: input.emissionFactorSpec,
+    factorCitation,
+    activityMetricValue,
     co2eKg,
     co2eTonnes,
     precisionWarnings,

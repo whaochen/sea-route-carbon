@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>全球航海GHG排放計算器 · 系統架構 ｜ 晧脈元素庫</title>
+  <meta name="description" content="全球航海GHG排放計算器系統架構與合規透明說明：純前端零留存隱私設計、0% AI 數值推估聲明、抽象系統分層、晧脈生態系串聯地圖與智財聲明。" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://hao-element-matrix.pages.dev/badge.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 頂部深色雙層旗艦頁首 -->
+    <header class="top-nav">
+      <div class="header-inner">
+        <div class="header-left">
+          <div class="nav-brand">
+            <div class="brand-emblem" aria-hidden="true">
+              <span class="emblem-num">30</span>
+              <span class="emblem-sym">Zn</span>
+              <span class="emblem-name">Zinc</span>
+            </div>
+            <div class="brand-text">
+              <h1 class="brand-title">全球航海GHG排放計算器 · 系統架構與合規透明</h1>
+              <p class="brand-subtitle">晧脈元素庫 · Architecture &amp; Compliance | ISO 14064-1 類別 3 ／ GHG Protocol 範疇三類別 4 &amp; 9 ／ ISO 14083</p>
+            </div>
+          </div>
+
+          <div class="header-row-2">
+            <div class="nav-stats">
+              <div class="stat-box ready">
+                <span class="stat-label">運行架構模式</span>
+                <span class="stat-value mono"><span class="status-dot"></span>100% 純瀏覽器運算</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">執行期 AI 推估</span>
+                <span class="stat-value mono">0% 確定性演算法</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">商港字典基準</span>
+                <span class="stat-value mono">UN/LOCODE 字典</span>
+              </div>
+            </div>
+            <div class="nav-badge-slot">
+              <hao-element-badge symbol="Zn" theme="dark"></hao-element-badge>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 純白導覽列 -->
+    <nav class="tab-bar" aria-label="站內導覽">
+      <div class="tab-bar-inner">
+        <div class="tab-group">
+          <span class="tab-btn active">系統架構與合規</span>
+        </div>
+        <div class="page-nav-links">
+          <a href="/" class="page-link">計算器主頁</a>
+          <a href="/guide" class="page-link">操作與實踐指引</a>
+          <a href="/architecture" class="page-link active">系統架構與合規</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="page-container">
+      <!-- ① 動態資料流架構圖 -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>1. 動態資料流架構圖（點擊節點檢視詳情）</h2>
+          <span class="badge-tag">DATA FLOW</span>
+        </div>
+        <div class="flow-nodes">
+          <button type="button" class="flow-node active" data-node="n1">
+            <span class="flow-node-id">NODE 01</span>
+            <div class="flow-node-title">港埠字典解析</div>
+            <div class="flow-node-sub">UN/LOCODE 全球主要商港字典（持續擴充）</div>
+          </button>
+          <button type="button" class="flow-node" data-node="n2">
+            <span class="flow-node-id">NODE 02</span>
+            <div class="flow-node-title">20km 海運圖論尋徑</div>
+            <div class="flow-node-sub">最短可行距離 (SFD) 與運河限制</div>
+          </button>
+          <button type="button" class="flow-node" data-node="n3">
+            <span class="flow-node-id">NODE 03</span>
+            <div class="flow-node-title">單位防呆與 GHG 運算</div>
+            <div class="flow-node-sub">tkm / TEU-km 自動校驗</div>
+          </button>
+          <button type="button" class="flow-node" data-node="n4">
+            <span class="flow-node-id">NODE 04</span>
+            <div class="flow-node-title">MRV 佐證匯出</div>
+            <div class="flow-node-sub">PNG 佐證圖與四層溯源 CSV</div>
+          </button>
+        </div>
+        <div id="flow-detail-box" class="flow-detail-box">
+          【節點 1 · 港埠字典解析】接收使用者輸入之 UN/LOCODE 五碼海港代碼或中英文別名，於瀏覽器記憶體中比對「UN/LOCODE 全球主要商港字典（持續擴充）」，取得標準化經緯度座標，全程不向外部資料庫送出查詢。
+        </div>
+      </section>
+
+      <!-- ② 免登入零阻力與瀏覽器端零留存隱私說明 -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>2. 免登入零阻力與瀏覽器端零留存隱私說明</h2>
+          <span class="badge-tag">ZERO RETENTION</span>
+        </div>
+        <ul class="guard-list">
+          <li><strong>免註冊、免 API 金鑰</strong>：開啟網頁即可直接進行單趟、多段轉運與批次 CSV 試算，無須帳號驗證或商業付費門檻。</li>
+          <li><strong>資料零上傳、零留存</strong>：企業輸入之起迄港碼、貨物淨重（公噸）、貨櫃數（TEU）及提單編號（<code>ref_doc_id</code>）全程僅存於用戶端瀏覽器記憶體，關閉分頁即自動銷毀，系統後端不蒐集、不記錄任何商業機密軌跡。</li>
+        </ul>
+      </section>
+
+      <!-- ③ 0% AI 數值推估聲明 + 純抽象系統分層架構表 -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>3. 執行期 0% AI 數值推估聲明與純抽象系統分層架構</h2>
+          <span class="badge-tag">DETERMINISTIC ENGINE</span>
+        </div>
+        <p class="helper-text">
+          本系統在執行期採用 <strong>0% 生成式 AI 數值推估</strong>——所有航線距離皆由確定性圖論演算法求得，所有碳排數值皆由公開排放係數與活動數據進行精確算術相乘，確保每次重算具 100% 可重現性（Reproducibility），完全符合第三方查證要求。
+        </p>
+        <div class="batch-table-wrap">
+          <table class="batch-table">
+            <thead>
+              <tr>
+                <th>抽象系統分層</th>
+                <th>職責與運作機制</th>
+                <th>運行位置</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>靜態資源分發層</strong></td>
+                <td>提供純靜態前端應用程式、樣式表與開放海運路網切片檔案下載</td>
+                <td class="mono">靜態邊緣節點</td>
+              </tr>
+              <tr>
+                <td><strong>港埠字典與語意層</strong></td>
+                <td>解析 UN/LOCODE 全球主要商港字典（持續擴充）與繁體中文港名別名對照</td>
+                <td class="mono">瀏覽器記憶體</td>
+              </tr>
+              <tr>
+                <td><strong>空間圖論運算層</strong></td>
+                <td>執行 20 km 海洋路網最短路徑尋徑、運河海峽限制過濾與跨換日線分段處理</td>
+                <td class="mono">瀏覽器記憶體</td>
+              </tr>
+              <tr>
+                <td><strong>係數與單位檢核層</strong></td>
+                <td>強制綁定環境部與國際係數之宣告單位（<code>tkm</code> / <code>TEU-km</code>）與防重複加計檢核</td>
+                <td class="mono">瀏覽器記憶體</td>
+              </tr>
+              <tr>
+                <td><strong>互動海圖與 MRV 輸出層</strong></td>
+                <td>渲染港到港航線向量圖層，並於本機合成查證佐證圖檔與四層溯源清冊報表</td>
+                <td class="mono">瀏覽器 Canvas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ④ 晧脈生態系串聯地圖 -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>4. 晧脈元素庫生態系串聯地圖</h2>
+          <span class="badge-tag">ECOSYSTEM</span>
+        </div>
+        <p id="eco-status" class="helper-text">正在從晧脈元素庫主站動態載入最新生態系節點…</p>
+        <div id="eco-grid" class="eco-grid"></div>
+      </section>
+
+      <!-- ⑤ 原出處免責、OGDL／ODbL 智財聲明與一鍵複製引用文案 -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>5. 原出處免責、授權條款與標準查證報告書引用文案</h2>
+          <button type="button" id="btn-copy-citation" class="btn btn-primary btn-sm">
+            📋 一鍵複製標準查證報告書引用文案
+          </button>
+        </div>
+        <ul class="guard-list">
+          <li><strong>政府資料開放授權</strong>：內建之環境部碳足跡排放係數依「政府資料開放授權條款－第 1 版（OGDL-Taiwan-1.0）」釋出引用。</li>
+          <li><strong>開放地理圖資授權</strong>：底圖圖磚資料依據 Open Database License（ODbL）使用，並標註 <code>© OpenStreetMap contributors</code>。</li>
+          <li><strong>原出處免責聲明</strong>：本工具僅供研究與初步試算參考，非官方背書；所有數據與係數一律以原出處機關最新公告為準，引用錯誤非平台責任。</li>
+        </ul>
+      </section>
+    </main>
+
+    <!-- Toast 提示 -->
+    <div id="toast-banner" class="toast-banner hidden">✓ 已複製標準查證報告書引用文案</div>
+
+    <!-- 頁尾 -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span class="footer-brand">晧脈元素庫 <strong>Zn</strong> 30 鋅 · 全球航海GHG排放計算器</span>
+        <span class="footer-meta">本工具僅供研究與初步試算參考，非官方背書；所有數據與係數一律以原出處機關最新公告為準，引用錯誤非平台責任。</span>
+      </div>
+      <div class="footer-right">
+        <hao-element-badge symbol="Zn" theme="light"></hao-element-badge>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/pages/architecture.ts"></script>
+</body>
+</html>

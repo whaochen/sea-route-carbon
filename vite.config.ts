@@ -1,3 +1,4 @@
+import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
@@ -9,6 +10,11 @@ export default defineConfig({
       include: [/searoute-ts/, /node_modules/],
     },
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        guide: resolve(__dirname, 'guide.html'),
+        architecture: resolve(__dirname, 'architecture.html'),
+      },
       output: {
         manualChunks: {
           leaflet: ['leaflet'],

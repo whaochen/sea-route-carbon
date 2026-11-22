@@ -186,22 +186,30 @@
       </div>
     </header>
 
-    <!-- 2. 純白橫向頁籤列（Tab Bar） -->
-    <nav class="tab-bar" aria-label="功能頁籤">
+    <!-- 2. 純白橫向頁籤列（Tab Bar + 三頁互連導覽） -->
+    <nav class="tab-bar" aria-label="功能頁籤與站內導覽">
       <div class="tab-bar-inner">
-        <button type="button" class="tab-btn active" data-tab="single">
-          <span>單趟精算</span>
-        </button>
-        <button type="button" class="tab-btn" data-tab="multi">
-          <span>多段轉運航程</span>
-          <span id="tab-waypoint-badge" class="tab-badge">0</span>
-        </button>
-        <button type="button" class="tab-btn" data-tab="batch">
-          <span>CSV 批次試算</span>
-        </button>
-        <button type="button" class="tab-btn" data-tab="reference">
-          <span>係數與引用總表</span>
-        </button>
+        <div class="tab-group">
+          <button type="button" class="tab-btn active" data-tab="single">
+            <span>單趟精算</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="multi">
+            <span>多段轉運航程</span>
+            <span id="tab-waypoint-badge" class="tab-badge">0</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="batch">
+            <span>CSV 批次試算</span>
+          </button>
+          <button type="button" class="tab-btn" data-tab="reference">
+            <span>係數與引用總表</span>
+          </button>
+        </div>
+
+        <div class="page-nav-links" aria-label="頁面切換">
+          <a href="/" class="page-link active">計算器主頁</a>
+          <a href="/guide" class="page-link">操作與實踐指引</a>
+          <a href="/architecture" class="page-link">系統架構與合規</a>
+        </div>
       </div>
     </nav>
 
@@ -225,7 +233,8 @@
         <!-- 快速基準案例（圓角膠囊 Pill） -->
         <section class="panel-card">
           <div class="card-header">
-            <h2>快速載入基準航線</h2>
+            <h2>快速載入示範／基準航線</h2>
+            <span class="badge-tag">10 秒驗證</span>
           </div>
           <div class="preset-chips">
             <button type="button" class="chip-btn active" data-preset="CNSHA-NLRTM">
@@ -235,7 +244,7 @@
               上海 → 鹿特丹（紅海改道好望角）
             </button>
             <button type="button" class="chip-btn" data-preset="TWKHH-USLAX">
-              高雄 TWKHH → 洛杉磯 USLAX
+              示範：高雄 TWKHH → 洛杉磯 USLAX
             </button>
           </div>
         </section>
@@ -308,26 +317,44 @@
           </div>
         </section>
 
-        <!-- 貨物重量與碳排係數 -->
+        <!-- 貨物活動數據與環境部碳排係數 -->
         <section class="panel-card">
           <div class="card-header">
-            <h2>3. 噸公里與碳排試算（選填）</h2>
+            <h2>3. 活動數據與環境部碳排係數</h2>
+            <span class="badge-tag" id="unit-mode-badge">tkm</span>
           </div>
+
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label for="select-ef" class="field-label">排放係數來源（環境部優先推薦）</label>
+            <select id="select-ef" class="ef-select">
+              <optgroup label="環境部碳足跡係數（優先推薦）">
+                <option value="moenv-intl-fuel-tkm" selected>1. 國際海運貨物運輸服務(燃料油動力) · 美國 2016 — 0.0198 kgCO₂e/tkm（預設）</option>
+                <option value="moenv-intl-tw-teu">2. 國際海運貨物運輸服務(本國籍貨櫃船，歐美長程航線) · 臺灣 2022 — 0.0649 kgCO₂e/TEU-km</option>
+                <option value="moenv-dom-diesel-tkm">3. 國內海運貨物運輸服務(柴油動力) · 美國 2016 — 0.0334 kgCO₂e/tkm</option>
+                <option value="moenv-dom-fuel-tkm">4. 國內海運貨物運輸服務(燃料油動力) · 美國 2016 — 0.0354 kgCO₂e/tkm</option>
+              </optgroup>
+              <optgroup label="國際 GLEC 參考係數與自訂">
+                <option value="glec-container-avg">GLEC 一般貨櫃船平均參考值 — 0.0161 kgCO₂e/tkm</option>
+                <option value="glec-ulcv-tkm">超大型遠洋貨櫃船 (&gt;10,000 TEU) — 0.0078 kgCO₂e/tkm</option>
+                <option value="glec-bulk-tkm">遠洋散裝船 (Bulk Carrier) — 0.0065 kgCO₂e/tkm</option>
+                <option value="custom">自訂排放係數 (kgCO₂e/tkm)</option>
+              </optgroup>
+            </select>
+            <p id="ef-spec-note" class="helper-text" style="margin: 5px 0 0 0;">
+              預設首選：實務併櫃 (LCL) 頻率高，以貨物淨重（公噸）計算。
+            </p>
+          </div>
+
           <div class="form-grid-2">
             <div class="input-group">
-              <label for="input-weight" class="field-label">貨物淨重（公噸 t）</label>
+              <label for="input-weight" id="label-activity" class="field-label">貨物淨重（公噸 t）</label>
               <input type="number" id="input-weight" min="0" step="0.01" placeholder="例如：20" />
+              <span id="teu-hint" class="teu-hint hidden">提示：1 個 40 呎櫃 = 2 TEU</span>
             </div>
             <div class="input-group">
-              <label for="input-ef" class="field-label">排放係數（kgCO₂e / t-km）</label>
-              <input type="number" id="input-ef" min="0" step="0.0001" placeholder="例如：0.0161" />
+              <label for="input-ef" id="label-ef-value" class="field-label">係數值（kgCO₂e / tkm）</label>
+              <input type="number" id="input-ef" min="0" step="0.0001" value="0.0198" />
             </div>
-          </div>
-          <div class="ef-presets">
-            <span class="ef-label">參考預設值：</span>
-            <button type="button" class="ef-chip" data-ef="0.0161" title="環境部／GLEC 一般貨櫃船參考值">貨櫃船 0.0161</button>
-            <button type="button" class="ef-chip" data-ef="0.0078" title="大型遠洋貨櫃船 (>10,000 TEU) 參考值">超大型貨櫃 0.0078</button>
-            <button type="button" class="ef-chip" data-ef="0.0065" title="遠洋散裝船參考值">散裝船 0.0065</button>
           </div>
         </section>
 
@@ -387,10 +414,10 @@
               </div>
 
               <div class="metric-item">
-                <span class="metric-label">延噸公里 (Ton-Kilometer)</span>
+                <span class="metric-label" id="res-activity-label">延噸公里 (t-km)</span>
                 <div class="metric-value-row">
                   <span id="res-tkm" class="metric-value">--</span>
-                  <span class="metric-unit">t-km</span>
+                  <span class="metric-unit" id="res-activity-unit">t-km</span>
                 </div>
                 <span id="res-weight-note" class="metric-sub">請輸入貨物淨重以試算</span>
               </div>
@@ -430,7 +457,7 @@
             <div class="mrv-drawer-header">
               <div>
                 <h3 class="mrv-drawer-title">引用說明（MRV 查證佐證抽屜）</h3>
-                <p class="mrv-drawer-sub">適用於 ISO 14064-1 類別三清冊與第三方查證報告書佐證</p>
+                <p class="mrv-drawer-sub">適用於 ISO 14064-1 類別 3 ／ GHG Protocol 範疇三類別 4 &amp; 9 ／ ISO 14083 查證佐證</p>
               </div>
               <div class="mrv-drawer-actions">
                 <button type="button" id="btn-copy-audit" class="btn btn-primary btn-sm">
@@ -449,7 +476,7 @@
         <!-- GLEC / ISO 14083 查證防呆說明卡 -->
         <div class="audit-guard-card">
           <div class="guard-header">
-            <span class="guard-badge">ISO 14064-1 類別三 / ISO 14083 / GLEC v3.2 查證防呆</span>
+            <span class="guard-badge">ISO 14064-1 類別 3 ／ GHG Protocol 範疇三類別 4 &amp; 9 ／ ISO 14083 查證防呆</span>
           </div>
           <ul class="guard-list">
             <li>
@@ -470,13 +497,13 @@
     <section id="view-batch" class="tab-panel hidden">
       <div class="panel-card">
         <div class="card-header">
-          <h2>CSV 批次航線查詢與查證報表匯出</h2>
+          <h2>CSV 批次航線查詢與四層溯源報表匯出</h2>
           <span class="badge-tag">BATCH MRV</span>
         </div>
         <p class="helper-text">
-          每行輸入一筆資料，格式：<code>起運港代碼, 目的港代碼, 貨物淨重(公噸，選填)</code>（支援逗號或 Tab 分隔，可從 Excel 直接貼上）。將套用目前「單趟精算」頁籤勾選的「運河改道」與「排放係數」設定。
+          每行輸入一筆資料，格式：<code>起運港代碼, 目的港代碼, 貨物淨重(t)或TEU數, ref_doc_id(提單B/L編號，選填)</code>（支援逗號或 Tab 分隔，可從 Excel 直接貼上）。將套用目前「單趟精算」頁籤勾選的「運河改道」與「排放係數」設定。
         </p>
-        <textarea id="batch-input" rows="7" placeholder="CNSHA, NLRTM, 25&#10;TWKHH, USLAX, 18.5&#10;TWKEL, JPTYO, 10"></textarea>
+        <textarea id="batch-input" rows="7" placeholder="CNSHA, NLRTM, 25, BL-2026-001&#10;TWKHH, USLAX, 18.5, BL-2026-002&#10;TWKEL, JPTYO, 10, BL-2026-003"></textarea>
         <div class="batch-actions">
           <button type="button" id="btn-run-batch" class="btn btn-primary">執行批次運算</button>
           <button type="button" id="btn-export-csv" class="btn btn-outline" disabled>下載 CSV 查證報表</button>
@@ -485,12 +512,13 @@
           <table class="batch-table">
             <thead>
               <tr>
+                <th>提單編號 (ref_doc_id)</th>
                 <th>起運港</th>
                 <th>目的港</th>
+                <th>航道狀態碼</th>
                 <th>距離 (km)</th>
-                <th>距離 (nm)</th>
-                <th>淨重 (t)</th>
-                <th>延噸公里 (t-km)</th>
+                <th>活動量</th>
+                <th>延噸/延櫃公里</th>
                 <th>碳排 (kgCO₂e)</th>
                 <th>狀態</th>
               </tr>
@@ -503,26 +531,86 @@
 
     <!-- 頁籤 4：係數與引用總表 -->
     <section id="view-reference" class="tab-panel hidden">
+      <div class="panel-card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <h2>環境部海運碳足跡排放係數（優先推薦）</h2>
+          <span class="badge-tag">OGDL-Taiwan-1.0</span>
+        </div>
+        <p class="helper-text">
+          資料來源：<a href="https://cfp.moenv.gov.tw/" target="_blank" rel="noopener noreferrer" style="color: var(--accent); font-weight: 600;">環境部產品碳足跡資訊網</a>（依政府資料開放授權條款－第 1 版 OGDL-Taiwan-1.0 釋出）。實務併櫃 (LCL) 優先採用第 1 組 <code>tkm</code> 係數；整櫃歐美長程航線選用第 2 組 <code>TEU-km</code> 時，系統將自動切換為 TEU 貨櫃數計算。
+        </p>
+        <div class="batch-table-wrap">
+          <table class="batch-table">
+            <thead>
+              <tr>
+                <th>排序</th>
+                <th>係數名稱（環境部官方全名）</th>
+                <th>生產區域</th>
+                <th>排放係數值</th>
+                <th>宣告單位</th>
+                <th>公告年份</th>
+                <th>實務備註</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">1</td>
+                <td><strong>國際海運貨物運輸服務(燃料油動力)</strong></td>
+                <td>美國</td>
+                <td class="mono"><strong>0.0198</strong> (1.980E-02) kgCO₂e</td>
+                <td class="mono">延噸公里 (tkm)</td>
+                <td class="mono">2016</td>
+                <td><strong>預設首選</strong>（實務併櫃 LCL 頻率高）</td>
+              </tr>
+              <tr>
+                <td class="mono">2</td>
+                <td><strong>國際海運貨物運輸服務(本國籍貨櫃船，歐美長程航線)</strong></td>
+                <td>臺灣</td>
+                <td class="mono"><strong>0.0649</strong> (6.490E-02) kgCO₂e</td>
+                <td class="mono">每個20呎標準貨櫃-每公里 (TEU-km)</td>
+                <td class="mono">2022</td>
+                <td>整櫃歐美長程專用（觸發 TEU 單位切換）</td>
+              </tr>
+              <tr>
+                <td class="mono">3</td>
+                <td><strong>國內海運貨物運輸服務(柴油動力)</strong></td>
+                <td>美國</td>
+                <td class="mono"><strong>0.0334</strong> (3.340E-02) kgCO₂e</td>
+                <td class="mono">延噸公里 (tkm)</td>
+                <td class="mono">2016</td>
+                <td>國內海運選用</td>
+              </tr>
+              <tr>
+                <td class="mono">4</td>
+                <td><strong>國內海運貨物運輸服務(燃料油動力)</strong></td>
+                <td>美國</td>
+                <td class="mono"><strong>0.0354</strong> (3.540E-02) kgCO₂e</td>
+                <td class="mono">延噸公里 (tkm)</td>
+                <td class="mono">2016</td>
+                <td>國內海運選用</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="ref-grid">
         <div class="panel-card">
           <div class="card-header">
-            <h2>常用海運排放係數參考表（GLEC v3.2 / 環境部參考）</h2>
-            <span class="badge-tag">kgCO₂e / t-km</span>
+            <h2>次要國際參考係數（GLEC v3.2）</h2>
+            <span class="badge-tag">kgCO₂e / tkm</span>
           </div>
-          <p class="helper-text">
-            下表係數僅供初步試算參考，正式盤查請優先引用環境部最新公告或承運船公司提供之實測係數。
-          </p>
           <table class="batch-table">
             <thead>
               <tr>
                 <th>船型類別</th>
-                <th>參考係數 (kgCO₂e / t-km)</th>
+                <th>參考係數 (kgCO₂e / tkm)</th>
                 <th>備註說明</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>一般海運貨櫃船（預設）</td>
+                <td>GLEC 一般貨櫃船平均參考值</td>
                 <td class="mono"><strong>0.0161</strong></td>
                 <td>含 GLEC 實務繞航修正（勿重複乘 1.15）</td>
               </tr>
@@ -536,11 +624,6 @@
                 <td class="mono"><strong>0.0065</strong></td>
                 <td>礦砂、穀物、煤炭等大宗散貨</td>
               </tr>
-              <tr>
-                <td>油輪 / 化學品船 (Tanker)</td>
-                <td class="mono"><strong>0.0082</strong></td>
-                <td>液態大宗貨物</td>
-              </tr>
             </tbody>
           </table>
         </div>
@@ -551,20 +634,21 @@
             <span class="badge-tag">ISO 14064-1 / 14083</span>
           </div>
           <ul class="guard-list">
-            <li><strong>演算法與路網</strong>：<code>searoute-ts</code>（MIT 授權）結合 2025 歐盟統計局海運路網（Eurostat <code>marnet-20km</code>），共收錄全球 1,610 個 UN/LOCODE 海港節點。</li>
-            <li><strong>距離定義（SFD）</strong>：依據 ISO 14083 與 GLEC Framework v3.2 規範，採用「港到港最短可行距離（Port-to-Port Shortest Feasible Distance）」，非直線大圓距離。</li>
+            <li><strong>盤查標準分類</strong>：ISO 14064-1 類別 3 ／ GHG Protocol 範疇三類別 4 &amp; 9 ／ ISO 14083。</li>
+            <li><strong>演算法與路網</strong>：<code>searoute-ts</code>（MIT 授權）結合 2025 歐盟統計局海運路網（Eurostat <code>marnet-20km</code>）與 UN/LOCODE 全球商港字典。</li>
+            <li><strong>距離定義（SFD）</strong>：採用「港到港最短可行距離（Port-to-Port Shortest Feasible Distance）」，非直線大圓距離。</li>
             <li><strong>繞航修正防呆</strong>：若採用已內含約 15% 實際航道繞航之排放係數，請直接以本工具輸出之 SFD 相乘，切勿額外乘以 1.15。</li>
-            <li><strong>跨換日線與運河改道</strong>：支援 <code>antimeridian: 'split'</code> 跨太平洋不斷線渲染，以及蘇伊士運河／曼德海峽、巴拿馬運河、麻六甲海峽受阻改道模擬。</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- 頁尾品牌列 -->
+    <!-- 頁尾品牌列（含標準免責聲明） -->
     <footer class="app-footer">
       <div class="footer-left">
         <span class="footer-brand">晧脈元素庫 <strong>Zn</strong> 30 鋅 · 全球航海GHG排放計算器</span>
-        <span class="footer-meta">Shortest Feasible Distance (SFD) via 2025 Eurostat Maritime Network (searoute-ts / marnet-20km) · Map © OpenStreetMap contributors</span>
+        <span class="footer-meta">本工具僅供研究與初步試算參考，非官方背書；所有數據與係數一律以原出處機關最新公告為準，引用錯誤非平台責任。</span>
+        <span class="footer-meta">Shortest Feasible Distance (SFD) via 2025 Eurostat Maritime Network (marnet-20km) · Map © OpenStreetMap contributors</span>
       </div>
       <div class="footer-right">
         <hao-element-badge symbol="Zn" theme="light"></hao-element-badge>

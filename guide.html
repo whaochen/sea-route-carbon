@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>全球航海GHG排放計算器 · 操作與實踐指引 ｜ 晧脈元素庫</title>
+  <meta name="description" content="全球航海GHG排放計算器操作與實踐指引（HEM-GUIDE-Zn）：涵蓋單趟/多段轉運/CSV批次規格、環境部 tkm 與 TEU-km 係數選用指引、四層證據鏈與查證 SOP。" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://hao-element-matrix.pages.dev/badge.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- 頂部深色雙層旗艦頁首 -->
+    <header class="top-nav">
+      <div class="header-inner">
+        <div class="header-left">
+          <div class="nav-brand">
+            <div class="brand-emblem" aria-hidden="true">
+              <span class="emblem-num">30</span>
+              <span class="emblem-sym">Zn</span>
+              <span class="emblem-name">Zinc</span>
+            </div>
+            <div class="brand-text">
+              <h1 class="brand-title">全球航海GHG排放計算器 · 操作與實踐指引</h1>
+              <p class="brand-subtitle">晧脈元素庫 · HEM-GUIDE-Zn | ISO 14064-1 類別 3 ／ GHG Protocol 範疇三類別 4 &amp; 9 ／ ISO 14083</p>
+            </div>
+          </div>
+
+          <div class="header-row-2">
+            <div class="nav-stats">
+              <div class="stat-box ready">
+                <span class="stat-label">指引文件編號</span>
+                <span class="stat-value mono"><span class="status-dot"></span>HEM-GUIDE-Zn</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">活動數據單位</span>
+                <span class="stat-value mono">tkm / TEU-km</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">查證方法學</span>
+                <span class="stat-value mono">ISO 14083 SFD</span>
+              </div>
+            </div>
+            <div class="nav-badge-slot">
+              <hao-element-badge symbol="Zn" theme="dark"></hao-element-badge>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 純白導覽列 -->
+    <nav class="tab-bar" aria-label="站內導覽">
+      <div class="tab-bar-inner">
+        <div class="tab-group">
+          <span class="tab-btn active">操作與實踐指引</span>
+        </div>
+        <div class="page-nav-links">
+          <a href="/" class="page-link">計算器主頁</a>
+          <a href="/guide" class="page-link active">操作與實踐指引</a>
+          <a href="/architecture" class="page-link">系統架構與合規</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="page-container">
+      <!-- ① 操作三步驟與欄位規格 -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>1. 單趟／多段轉運／批次 CSV 操作三步驟與欄位規格</h2>
+          <span class="badge-tag">操作指引</span>
+        </div>
+        <div class="step-grid-3">
+          <div class="step-card">
+            <span class="step-num">Step 01 · 單趟與多段轉運</span>
+            <h3>選定 UN/LOCODE 港碼與航道</h3>
+            <p>
+              於「單趟精算」或「多段轉運航程」輸入五碼 UN/LOCODE（如 <code>TWKHH</code>、<code>CNSHA</code>、<code>NLRTM</code>）或中文港名。若有轉運港可加入 1～3 個中繼節點；若遇紅海危機或運河限航，可勾選避開蘇伊士／巴拿馬／麻六甲海峽以模擬改道距離。
+            </p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">Step 02 · tkm 與 TEU-km 選用</span>
+            <h3>依貨物型態選擇環境部係數</h3>
+            <p>
+              <strong>實務併櫃 (LCL) 或散雜貨</strong>：優先採用環境部 2016「國際海運貨物運輸服務(燃料油動力)」(<code>0.0198 kgCO₂e/tkm</code>)，僅需提單貨物淨重（公噸）即可計算，普及率與查證接受度最高。<br />
+              <strong>整櫃歐美長程航線 (FCL)</strong>：若具備櫃量且為本國籍貨櫃船歐美航線，可切換至環境部 2022「本國籍貨櫃船」(<code>0.0649 kgCO₂e/TEU-km</code>)，系統會自動切換為 TEU 輸入欄（1 個 40 呎櫃 = 2 TEU）。
+            </p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">Step 03 · CSV 批次試算規格</span>
+            <h3>Excel 貼上與 B/L 提單溯源</h3>
+            <p>
+              於「CSV 批次試算」頁籤貼上多筆資料，欄位順序為：<code>起運港代碼, 目的港代碼, 淨重(t)或TEU數, ref_doc_id(提單B/L編號)</code>。系統會自動套用當前航道設定與係數，輸出含狀態碼與完整方法學之 UTF-8 CSV 報表。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ② 佐證溯源四層證據鏈與查證 SOP -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>2. 佐證溯源四層證據鏈與四步驟查證 SOP</h2>
+          <span class="badge-tag">ISO 14064-1 類別 3 ／ GHG Protocol 範疇三類別 4 &amp; 9 ／ ISO 14083</span>
+        </div>
+        <div class="step-grid-4">
+          <div class="step-card">
+            <span class="step-num">L1 · 活動數據源頭</span>
+            <h3>海運提單 (B/L) 與裝箱單</h3>
+            <p>留存原始海運提單編號（<code>ref_doc_id</code>）、起迄港碼、貨物淨重（公噸）或貨櫃規格（20'/40' TEU）。</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">L2 · 距離運算依據</span>
+            <h3>20km 海運路網 SFD 路徑</h3>
+            <p>以 2025 Eurostat Maritime Network（<code>marnet-20km</code>）計算港到港最短可行距離，記錄是否含運河改道狀態碼。</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">L3 · 排放係數溯源</span>
+            <h3>環境部／GLEC 官方係數</h3>
+            <p>完整標註來源機關、公告年份、係數全名、生產區域與宣告單位（<code>tkm</code> 或 <code>TEU-km</code>）。</p>
+          </div>
+          <div class="step-card">
+            <span class="step-num">L4 · 查證交付物</span>
+            <h3>PNG 佐證圖與清冊引用</h3>
+            <p>匯出白底高對比 PNG 查證圖與標準清冊引用文字，附帶 UTC+8 查詢時間戳與原出處免責聲明。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ③ 互動式 FAQ 手風琴 -->
+      <section class="panel-card">
+        <div class="card-header">
+          <h2>3. 查證常見問題（FAQ）</h2>
+          <span class="badge-tag">點擊展開</span>
+        </div>
+        <div class="faq-list">
+          <div class="faq-item open">
+            <button type="button" class="faq-trigger" aria-expanded="true">
+              <span>Q1：為何紅海危機改道時，亞歐航線要同時勾選避開蘇伊士與巴拿馬運河？</span>
+              <span class="faq-chevron">▼</span>
+            </button>
+            <div class="faq-body">
+              純數學最短路徑中，東亞至歐洲若僅封鎖蘇伊士運河，電腦可能會嘗試往東經太平洋穿過巴拿馬運河（約 25,276 km），但大型亞歐母船實務上受限巴拿馬船閘規格而繞行南非好望角（約 25,830 km）。一併勾選避開巴拿馬運河即可精準模擬繞行好望角航線。
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-trigger" aria-expanded="false">
+              <span>Q2：計算結果的 SFD 距離，為什麼切勿手動再乘以 1.15（+15% 繞航因子）？</span>
+              <span class="faq-chevron">▼</span>
+            </button>
+            <div class="faq-body">
+              依據 GLEC Framework v3.2 與 ISO 14083 規範，環境部公告係數與 GLEC 預設海運係數多已內含約 15% 之實務航道繞航修正。若將本工具輸出之「港到港最短可行距離 (SFD)」再乘以 1.15，會造成繞航因子重複加計，導致碳排高估。
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-trigger" aria-expanded="false">
+              <span>Q3：短程近海航線出現「吸附距離提醒」或「繞航比 &lt; 1」代表什麼？</span>
+              <span class="faq-chevron">▼</span>
+            </button>
+            <div class="faq-body">
+              本系統採用 20 km 解析度海運路網（優於預設 100 km 路網），但極短程近海或內河型港口在座標吸附至最近海網節點時，仍可能產生數十公里的吸附誤差。若系統跳出警示，建議於正式查證時優先向承運船公司或貨代取得實測航程（AIS 或航海日誌）。
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-trigger" aria-expanded="false">
+              <span>Q4：輸入的提單編號、貨物淨重與批次清單會被上傳或留存在伺服器嗎？</span>
+              <span class="faq-chevron">▼</span>
+            </button>
+            <div class="faq-body">
+              <strong>不會。</strong>本計算器為 100% 純前端瀏覽器端運算，所有路網尋徑、係數相乘、PNG 圖片合成與 CSV 匯出皆在您的本機瀏覽器記憶體中完成，不傳送任何業務活動數據至外部伺服器，確保企業供應鏈資料零留存、零外洩風險。
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span class="footer-brand">晧脈元素庫 <strong>Zn</strong> 30 鋅 · 全球航海GHG排放計算器</span>
+        <span class="footer-meta">本工具僅供研究與初步試算參考，非官方背書；所有數據與係數一律以原出處機關最新公告為準，引用錯誤非平台責任。</span>
+      </div>
+      <div class="footer-right">
+        <hao-element-badge symbol="Zn" theme="light"></hao-element-badge>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/pages/guide.ts"></script>
+</body>
+</html>

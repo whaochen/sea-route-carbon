@@ -2,6 +2,11 @@ import './style.css';
 import type { Passage } from 'searoute-ts';
 import { PortSearchInput } from './components/PortSearchInput';
 import {
+  DEFAULT_EMISSION_FACTOR,
+  getEmissionFactorById,
+  type EmissionFactorSpec,
+} from './data/emissionFactors';
+import {
   buildAuditTrailText,
   downloadBatchCsv,
   exportVerificationPng,
@@ -60,6 +65,12 @@ class SeaRouteApp {
   private restrictPanama = document.getElementById('restrict-panama') as HTMLInputElement;
   private restrictMalacca = document.getElementById('restrict-malacca') as HTMLInputElement;
 
+  private selectEf = document.getElementById('select-ef') as HTMLSelectElement;
+  private efSpecNote = document.getElementById('ef-spec-note')!;
+  private unitModeBadge = document.getElementById('unit-mode-badge')!;
+  private labelActivity = document.getElementById('label-activity')!;
+  private labelEfValue = document.getElementById('label-ef-value')!;
+  private teuHint = document.getElementById('teu-hint')!;
   private inputWeight = document.getElementById('input-weight') as HTMLInputElement;
   private inputEf = document.getElementById('input-ef') as HTMLInputElement;
 
@@ -75,6 +86,8 @@ class SeaRouteApp {
   private resNm = document.getElementById('res-nm')!;
   private resDiff = document.getElementById('res-diff')!;
   private resDetour = document.getElementById('res-detour')!;
+  private resActivityLabel = document.getElementById('res-activity-label')!;
+  private resActivityUnit = document.getElementById('res-activity-unit')!;
   private resTkm = document.getElementById('res-tkm')!;
   private resWeightNote = document.getElementById('res-weight-note')!;
   private resCo2Kg = document.getElementById('res-co2-kg')!;
@@ -120,6 +133,7 @@ class SeaRouteApp {
     });
 
     this.bindEvents();
+    this.applyEmissionFactorSelection(DEFAULT_EMISSION_FACTOR.id);
     void this.initNetwork();
   }
 
@@ -214,15 +228,20 @@ class SeaRouteApp {
       this.addWaypoint();
     });
 
-    // EF 快速預設值按鈕
-    document.querySelectorAll<HTMLButtonElement>('.ef-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const ef = btn.dataset.ef ?? '';
-        this.inputEf.value = ef;
-        if (isNetworkReady() && this.lastResult) {
-          this.executeCalculation();
-        }
-      });
+    // 係數下拉選單切換（動態切換 tkm / TEU-km）
+    this.selectEf.addEventListener('change', () => {
+      this.applyEmissionFactorSelection(this.selectEf.value);
+      if (isNetworkReady() && this.lastResult) {
+        this.executeCalculation();
+      }
+    });
+
+    this.inputEf.addEventListener('input', () => {
+      const currentSpec = getEmissionFactorById(this.selectEf.value);
+      if (currentSpec && Number(this.inputEf.value) !== currentSpec.factor) {
+        this.selectEf.value = 'custom';
+        this.applyEmissionFactorSelection('custom', false);
+      }
     });
 
     // 快速基準航線預設按鈕（膠囊高亮切換）
@@ -304,10 +323,12 @@ class SeaRouteApp {
         return;
       }
       const ef = this.inputEf.value ? Number(this.inputEf.value) : undefined;
+      const spec = getEmissionFactorById(this.selectEf.value);
       this.lastBatchRows = runBatchCalculation(
         this.batchInput.value,
         this.getSelectedRestrictions(),
-        ef
+        ef,
+        spec
       );
       this.renderBatchTable(this.lastBatchRows);
       this.btnExportCsv.disabled = this.lastBatchRows.length === 0;
@@ -378,6 +399,31 @@ class SeaRouteApp {
     return restrictions;
   }
 
+  private applyEmissionFactorSelection(id: string, overwriteInput = true): void {
+    const spec: EmissionFactorSpec | undefined = getEmissionFactorById(id);
+    if (spec) {
+      if (overwriteInput) {
+        this.inputEf.value = String(spec.factor);
+      }
+      this.efSpecNote.textContent = spec.note;
+      const isTeu = spec.unit === 'TEU-km';
+      this.unitModeBadge.textContent = spec.unit;
+      this.labelActivity.textContent = isTeu ? '20 呎標準貨櫃數（TEU）' : '貨物淨重（公噸 t）';
+      this.inputWeight.placeholder = isTeu ? '例如：1 或 2' : '例如：20';
+      this.inputWeight.step = isTeu ? '1' : '0.01';
+      this.teuHint.classList.toggle('hidden', !isTeu);
+      this.labelEfValue.textContent = isTeu ? '係數值（kgCO₂e / TEU-km）' : '係數值（kgCO₂e / tkm）';
+    } else {
+      this.efSpecNote.textContent = '自訂係數模式：以延噸公里 (tkm) 為預設活動量單位。';
+      this.unitModeBadge.textContent = 'tkm';
+      this.labelActivity.textContent = '貨物淨重（公噸 t）';
+      this.inputWeight.placeholder = '例如：20';
+      this.inputWeight.step = '0.01';
+      this.teuHint.classList.add('hidden');
+      this.labelEfValue.textContent = '係數值（kgCO₂e / tkm）';
+    }
+  }
+
   private executeCalculation(): void {
     this.calcErrorMsg.classList.add('hidden');
 
@@ -398,6 +444,7 @@ class SeaRouteApp {
 
     const weightVal = this.inputWeight.value.trim();
     const efVal = this.inputEf.value.trim();
+    const selectedSpec = getEmissionFactorById(this.selectEf.value);
 
     try {
       const result = calculateSeaRoute({
@@ -405,8 +452,10 @@ class SeaRouteApp {
         waypoints: waypointPorts,
         destination,
         restrictions: this.getSelectedRestrictions(),
-        weightTonnes: weightVal ? Number(weightVal) : undefined,
-        emissionFactorKgPerTkm: efVal ? Number(efVal) : undefined,
+        activityAmount: weightVal ? Number(weightVal) : undefined,
+        emissionUnit: selectedSpec?.unit ?? 'tkm',
+        emissionFactorKgPerUnit: efVal ? Number(efVal) : undefined,
+        emissionFactorSpec: selectedSpec,
       });
 
       this.lastResult = result;
@@ -447,20 +496,26 @@ class SeaRouteApp {
       this.legendBaseline.classList.add('hidden');
     }
 
-    if (res.tonKilometers !== undefined && res.weightTonnes !== undefined) {
-      this.resTkm.textContent = res.tonKilometers.toLocaleString();
-      this.resWeightNote.textContent = `貨物淨重：${res.weightTonnes.toLocaleString()} 公噸`;
+    const isTeu = res.emissionUnit === 'TEU-km';
+    this.resActivityLabel.textContent = isTeu ? '延櫃公里 (TEU-km)' : '延噸公里 (t-km)';
+    this.resActivityUnit.textContent = isTeu ? 'TEU-km' : 't-km';
+
+    if (res.activityMetricValue !== undefined && res.activityAmount !== undefined) {
+      this.resTkm.textContent = res.activityMetricValue.toLocaleString();
+      this.resWeightNote.textContent = isTeu
+        ? `貨櫃數量：${res.activityAmount.toLocaleString()} TEU`
+        : `貨物淨重：${res.activityAmount.toLocaleString()} 公噸`;
     } else {
       this.resTkm.textContent = '--';
-      this.resWeightNote.textContent = '請輸入貨物淨重以試算';
+      this.resWeightNote.textContent = isTeu ? '請輸入 TEU 貨櫃數以試算' : '請輸入貨物淨重以試算';
     }
 
     if (res.co2eKg !== undefined && res.co2eTonnes !== undefined) {
       this.resCo2Kg.textContent = res.co2eKg.toLocaleString();
-      this.resCo2T.textContent = `${res.co2eTonnes} tCO₂e（係數 ${res.emissionFactor}）`;
+      this.resCo2T.textContent = `${res.co2eTonnes} tCO₂e（${res.factorCitation}）`;
     } else {
       this.resCo2Kg.textContent = '--';
-      this.resCo2T.textContent = '需輸入淨重與排放係數';
+      this.resCo2T.textContent = `係數：${res.factorCitation}`;
     }
 
     this.resRoutePath.textContent = res.portsSequence.map((p) => formatPortShort(p)).join(' → ');
@@ -485,12 +540,13 @@ class SeaRouteApp {
     for (const r of rows) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
+        <td class="mono">${r.refDocId || '-'}</td>
         <td class="mono">${r.originCode}</td>
         <td class="mono">${r.destCode}</td>
+        <td class="mono">${r.routeStatusCode}</td>
         <td class="mono">${r.distanceKm !== undefined ? r.distanceKm.toLocaleString() : '-'}</td>
-        <td class="mono">${r.distanceNm !== undefined ? r.distanceNm.toLocaleString() : '-'}</td>
-        <td class="mono">${r.weightTonnes ?? '-'}</td>
-        <td class="mono">${r.tonKilometers !== undefined ? r.tonKilometers.toLocaleString() : '-'}</td>
+        <td class="mono">${r.activityAmount !== undefined ? `${r.activityAmount} ${r.activityUnit === 'TEU-km' ? 'TEU' : 't'}` : '-'}</td>
+        <td class="mono">${r.activityMetricValue !== undefined ? `${r.activityMetricValue.toLocaleString()} ${r.activityUnit}` : '-'}</td>
         <td class="mono">${r.co2eKg !== undefined ? r.co2eKg.toLocaleString() : '-'}</td>
         <td>${r.status === 'OK' ? '<span class="tag-ok">成功</span>' : `<span class="tag-err">${r.errorMsg}</span>`}</td>
       `;
